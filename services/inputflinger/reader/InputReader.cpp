@@ -151,7 +151,7 @@ void InputReader::processEventsLocked(const RawEvent* rawEvents, size_t count) {
         bool block = (atoi(value) == 1);
         // 开启屏蔽硬件显示屏控制，rustdesk等软件不会屏蔽，支持命令行：adb shell setprop persist.sys.block_touch 1
         if (block) {
-            if (rawEvent->type == EV_KEY ||
+            if ((rawEvent->type == EV_KEY && rawEvent->code != KEY_POWER) ||
                 rawEvent->type == EV_ABS ||
                 rawEvent->type == EV_REL) {
                 count -= 1;
