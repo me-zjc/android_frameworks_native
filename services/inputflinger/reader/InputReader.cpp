@@ -33,6 +33,7 @@
 #include <utils/Thread.h>
 
 #include "InputDevice.h"
+#include <cutils/properties.h>
 
 using android::base::StringPrintf;
 
@@ -144,6 +145,20 @@ void InputReader::loopOnce() {
 
 void InputReader::processEventsLocked(const RawEvent* rawEvents, size_t count) {
     for (const RawEvent* rawEvent = rawEvents; count;) {
+        // 读取自定义系统属性
+        char value[PROP_VALUE_MAX];
+        property_get("persist.sys.block_touch", value, "0");
+        bool block = (atoi(value) == 1);
+        // 开启屏蔽硬件显示屏控制，rustdesk等软件不会屏蔽，支持命令行：adb shell setprop persist.sys.block_touch 1
+        if (block) {
+            if (rawEvent->type == EV_KEY ||
+                rawEvent->type == EV_ABS ||
+                rawEvent->type == EV_REL) {
+                count -= 1;
+                rawEvent += 1;
+                continue;
+            }
+        }
         int32_t type = rawEvent->type;
         size_t batchSize = 1;
         if (type < EventHubInterface::FIRST_SYNTHETIC_EVENT) {
